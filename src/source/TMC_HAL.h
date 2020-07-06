@@ -63,8 +63,8 @@
 
         class TMCPin {
         public:
-            explicit TMCPin(const uint16_t _pin) : pin(_pin) {}
-            void mode(const uint8_t mode);
+            explicit TMCPin(const uint16_t _pin);
+            void mode(const uint8_t mode) const;
             bool read() const;
             operator bool() const { return read(); }
             operator uint16_t() const { return pin; }
@@ -75,12 +75,37 @@
 
         class OutputPin : public TMCPin {
         public:
-            OutputPin(const uint16_t _pin) : TMCPin(_pin) {}
+            OutputPin(const uint16_t _pin);
             void write(const bool state) const;
         };
 
         typedef TMCPin InputPin;
     }
+
+    #define HardwareSerial HardwareSerial<>
+
+    #ifndef __MARLIN_FIRMWARE__
+        #include <SoftwareSPI.h>
+
+        struct SPIClass { // Should be removed when LPC core gets full SPI class implementation
+            SPIClass(const uint8_t spi_speed, const pin_t sck_pin, const pin_t miso_pin, const pin_t mosi_pin) :
+                mosi(mosi_pin), miso(miso_pin), sck(sck_pin), speed(spi_speed) {
+                    swSpiInit(spi_speed, sck_pin, mosi_pin);
+                }
+
+            void beginTransaction() const {
+                swSpiBegin(sck, miso, mosi);
+            }
+
+            uint8_t transfer(uint8_t data) const {
+                return swSpiTransfer(data, speed, sck, miso, mosi);
+            }
+
+            private:
+                const pin_t mosi, miso, sck;
+                const uint8_t speed;
+        };
+    #endif
 
 #elif defined(ARDUINO)
 

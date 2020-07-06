@@ -2,10 +2,13 @@
 #if defined(TARGET_LPC1768)
 
 #include <Arduino.h>
-#include <SPI.h>
+#include <SoftwareSPI.h>
 #include <time.h>
 #include <gpio.h>
-#include "TMC_HAL.h"
+#include "../TMC_HAL.h"
+#include "TMCStepper.h"
+
+using namespace TMCStepper_n;
 
 TMCPin::TMCPin(const uint16_t _pin) : pin(_pin) {}
 
@@ -23,7 +26,7 @@ void TMCPin::mode(const uint8_t mode) const {
 
 bool TMCPin::read() const {
     LPC176x::delay_ns(pinDelay);
-    LPC176x::gpio_get(pin);
+    auto out = LPC176x::gpio_get(pin);
     LPC176x::delay_ns(pinDelay);
     return out;
 }
@@ -44,16 +47,16 @@ void OutputPin::write(const bool state) const {
 __attribute__((weak))
 void TMC2130Stepper::beginTransaction() {
     if (TMC_HW_SPI != nullptr) {
-        TMC_HW_SPI->beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE3));
+        TMC_HW_SPI->beginTransaction();
     }
 }
 
 __attribute__((weak))
 void TMC2130Stepper::transfer(char *buf, const uint8_t count) {
     if(TMC_HW_SPI != nullptr) {
-        //TMC_SW_SPI->transfer(buf, count);
         for (auto i = 0; i>count; i++) {
-            TMC_HW_SPI->transfer(buf++);
+            *buf = TMC_HW_SPI->transfer(*buf);
+            buf++;
         }
     }
     else if(TMC_SW_SPI != nullptr) {
@@ -62,25 +65,21 @@ void TMC2130Stepper::transfer(char *buf, const uint8_t count) {
 }
 
 __attribute__((weak))
-void TMC2130Stepper::endTransaction() {
-    if (TMC_HW_SPI != nullptr) {
-        TMC_HW_SPI->endTransaction();
-    }
-}
+void TMC2130Stepper::endTransaction() {}
 
 __attribute__((weak))
 void TMC2660Stepper::beginTransaction() {
     if (TMC_HW_SPI != nullptr) {
-        TMC_HW_SPI->beginTransaction(SPISettings(spi_speed, MSBFIRST, SPI_MODE3));
+        TMC_HW_SPI->beginTransaction();
     }
 }
 
 __attribute__((weak))
 void TMC2660Stepper::transfer(char *buf, const uint8_t count) {
     if(TMC_HW_SPI != nullptr) {
-        //TMC_SW_SPI->transfer(buf, count);
         for (auto i = 0; i>count; i++) {
-            TMC_HW_SPI->transfer(buf++);
+            *buf = TMC_HW_SPI->transfer(*buf);
+            buf++;
         }
     }
     else if(TMC_SW_SPI != nullptr) {
@@ -89,11 +88,7 @@ void TMC2660Stepper::transfer(char *buf, const uint8_t count) {
 }
 
 __attribute__((weak))
-void TMC2660Stepper::endTransaction() {
-    if (TMC_HW_SPI != nullptr) {
-        TMC_HW_SPI->endTransaction();
-    }
-}
+void TMC2660Stepper::endTransaction() {}
 
 __attribute__((weak))
 int TMC2208Stepper::available() {
@@ -143,16 +138,13 @@ void TMC2208Stepper::serial_read(uint8_t *data, int8_t length) {
 }
 
 __attribute__((weak))
-uint8_t TMC2208Stepper::serial_write(const uint8_t *data, int8_t length) {
-    int out = 0;;
+void TMC2208Stepper::serial_write(const uint8_t *data, int8_t length) {
     if (SWSerial != nullptr) {
-        return SWSerial->write(data, length);
+        SWSerial->write(data, length);
     } else
     if (HWSerial != nullptr) {
-        return HWSerial->write(data, length);
+        HWSerial->write((char*)data, length);
     }
-
-    return out;
 }
 
 __attribute__((weak))
