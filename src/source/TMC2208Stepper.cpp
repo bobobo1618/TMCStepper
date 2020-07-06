@@ -163,7 +163,7 @@ uint32_t TMC2208Stepper::read(uint8_t addr) {
     for (uint8_t i = 0; i < max_retries; i++) {
         preReadCommunication();
         response = sendReadRequest(datagram);
-        ppostReadCommunication();
+        postReadCommunication();
 
         uint8_t crc = calcCRC((uint8_t*)&response, response.length);
 
