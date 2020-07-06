@@ -202,7 +202,15 @@ int TMC2208Stepper::available() {
 }
 
 __attribute__((weak))
-void TMC2208Stepper::preCommunication() {
+void TMC2208Stepper::preWriteCommunication() {
+    if (HWSerial != nullptr) {
+        if (sswitch != nullptr)
+            sswitch->active();
+    }
+}
+
+__attribute__((weak))
+void TMC2208Stepper::preReadCommunication() {
     if (HWSerial != nullptr) {
         if (sswitch != nullptr)
             sswitch->active();
@@ -224,7 +232,10 @@ void TMC2208Stepper::serial_write(const uint8_t *data, int8_t length) {
 }
 
 __attribute__((weak))
-void TMC2208Stepper::postCommunication() {}
+void TMC2208Stepper::postWriteCommunication() {}
+
+__attribute__((weak))
+void TMC2208Stepper::postReadCommunication() {}
 
 #endif
 #endif // !defined(__MBED__)
