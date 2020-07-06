@@ -109,13 +109,24 @@ size_t TMC2208Stepper::getTime() const {
 }
 
 __attribute__((weak))
-void TMC2208Stepper::preCommunication() {
-    if (SWSerial != nullptr) {
-        SWSerial->listen();
-    } else if (HWSerial != nullptr) {
+void TMC2208Stepper::preWriteCommunication() {
+    if (HWSerial != nullptr) {
         if (sswitch != nullptr)
             sswitch->active();
     }
+}
+
+__attribute__((weak))
+void TMC2208Stepper::preReadCommunication() {
+    #if SW_CAPABLE_PLATFORM
+        if (SWSerial != nullptr) {
+            SWSerial->listen();
+        } else
+    #endif
+        if (HWSerial != nullptr) {
+            if (sswitch != nullptr)
+                sswitch->active();
+        }
 }
 
 __attribute__((weak))
@@ -147,10 +158,13 @@ void TMC2208Stepper::serial_write(const uint8_t *data, int8_t length) {
 }
 
 __attribute__((weak))
-void TMC2208Stepper::postCommunication() {
-    if (SWSerial != nullptr) {
-        SWSerial->stopListening();
-    }
+void TMC2208Stepper::postWriteCommunication() {}
+
+__attribute__((weak))
+void TMC2208Stepper::postReadCommunication() {
+        if (SWSerial != nullptr) {
+            SWSerial->stopListening();
+        }
 }
 
 #endif
